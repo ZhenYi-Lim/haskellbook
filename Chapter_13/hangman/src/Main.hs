@@ -46,59 +46,68 @@ randomWord' :: IO String
 randomWord' = gameWords >>= randomWord
 
 --Word to be guessed, characters filled so far, letters guessed so far.
-data Puzzle = Puzzle String [Maybe Char] [Char]
+data Puzzle = Puzzle String [Maybe Char] [Char] Int
 
 instance Show Puzzle where
-  show (Puzzle _ discovered guesssed) =
+  show (Puzzle _ discovered guesssed _) =
     (intersperse ' ' $ fmap renderPuzzleChar discovered)
 
 freshPuzzle :: String -> Puzzle
-freshPuzzle word = Puzzle word nothings ""
+freshPuzzle word = Puzzle word nothings "" 0
     where
       nothings = map (\c -> Nothing) word
 
 charInWord :: Puzzle -> Char -> Bool
-charInWord (Puzzle word _ _) c = elem c word
+charInWord (Puzzle word _ _ _) c = elem c word
 
 alreadyGuessed :: Puzzle -> Char -> Bool
-alreadyGuessed (Puzzle _ _ guessed) c = elem c guessed
+alreadyGuessed (Puzzle _ _ guessed _) c = elem c guessed
 
 renderPuzzleChar :: Maybe Char -> Char
 renderPuzzleChar Nothing = '_'
 renderPuzzleChar (Just c) = c
 
-fillInCharacter :: Puzzle -> Char -> Puzzle
-fillInCharacter (Puzzle word filledInSoFar s) c =
-  Puzzle word newFilledInSoFar (c:s)
+fillInCharacter :: Puzzle -> Char -> Int -> Puzzle
+fillInCharacter (Puzzle word filledInSoFar s _) c i =
+  Puzzle word newFilledInSoFar (c:s) i
     where
-    zipper guessed wordChar guessChar =
-      if wordChar == guessed
-        then Just wordChar
-      else guessChar
-    newFilledInSoFar = zipWith (zipper c) word filledInSoFar
+      zipper guessed wordChar guessChar =
+        if wordChar == guessed
+          then Just wordChar
+        else guessChar
+      newFilledInSoFar = zipWith (zipper c) word filledInSoFar
       
 handleGuess :: Puzzle -> Char -> IO Puzzle
-handleGuess puzzle guess = do
+handleGuess puzzle@(Puzzle _ _ _ i) guess = do
   putStrLn $ "Your guess was: " ++ [guess]
   case (charInWord puzzle guess, alreadyGuessed puzzle guess) of
     (_, True) -> do
       putStrLn "You already guessed that\
       \ character, pick \
       \ something else!"
+      putStr "Number of chances left: "
+      print (chances - i + 1)
       return puzzle
     (True, _) -> do
       putStrLn "This character was in the\
       \ word, filling in the word\
       \ accordingly"
-      return (fillInCharacter puzzle guess)
+      putStr "Number of chances left: "
+      print (chances - i + 1)
+      return (fillInCharacter puzzle guess i)
     (False, _) -> do
       putStrLn "This character wasn't in\
       \ the word, try again."
-      return (fillInCharacter puzzle guess)
+      putStr "Number of chances left: "
+      print (chances - i)
+      return (fillInCharacter puzzle guess (i+1))
+
+chances :: Int
+chances = 7
 
 gameOver :: Puzzle -> IO ()
-gameOver (Puzzle wordToGuess _ guessed) =
-  if (length guessed) > 7
+gameOver (Puzzle wordToGuess _ guessed i) =
+  if i > chances
   then do
     putStrLn "You lose!"
     putStrLn $ "The word was: " ++ wordToGuess
@@ -106,10 +115,11 @@ gameOver (Puzzle wordToGuess _ guessed) =
   else return ()
 
 gameWin :: Puzzle -> IO ()
-gameWin (Puzzle _ filledInSoFar _) =
+gameWin (Puzzle wordToGuess filledInSoFar _ _) =
   if all isJust filledInSoFar
   then do
     putStrLn "You win!"
+    putStrLn $ "The word was: " ++ wordToGuess
     exitSuccess
   else return ()
   
