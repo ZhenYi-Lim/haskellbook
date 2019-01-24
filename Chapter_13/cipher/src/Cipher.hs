@@ -41,3 +41,10 @@ vigenere key message = unwords encryptedWordList
         keyInt = keyShift key   -- key translted into shift number
         wordList = words message    -- message broken into words
         (_,_,encryptedWordList) = wordKeyMap 0 keyInt wordList []
+
+unVigenere :: String -> String -> String
+unVigenere key message = unwords encryptedWordList
+    where 
+        keyInt = map negate (keyShift key)   -- key translted into shift number
+        wordList = words message    -- message broken into words
+        (_,_,encryptedWordList) = wordKeyMap 0 keyInt wordList []
