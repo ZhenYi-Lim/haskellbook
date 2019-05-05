@@ -1,4 +1,5 @@
 import Data.Char
+import Data.List
 
 isSubseqOf :: (Eq a) => [a] -> [a] -> Bool
 isSubseqOf _ [] = False
@@ -89,12 +90,70 @@ convo =
 type Digit = Char
 type Presses = Int
 
-{- reverseTaps :: DaPhone -> Char -> [(Digit, Presses)]
-reverseTaps (DaPhone phoneList) char
+reverseTaps :: DaPhone -> Char -> [(Digit, Presses)]
+reverseTaps (DaPhone phoneList) char = go phoneList char [] 0
     where
-        go pps@(p:ps) char presses
-            | (isUpper char) = go pps (toLower char) "*"
-            | elem char (snd p) = 
+        go pps@(p:ps) char output count
+            --if is space ' ', add '0' press
+            | char == ' ' = [('0', 1)]
+            --if is upper character, add "*" to capitalise
+            | isUpper char = go pps (toLower char) [('*', 1)] 0
+            --if have exhausted that digit, continue searching in the rest of the digits
+            | snd p == "" = go ps char output 0
+            --if matches character, return final result, with a '1' press at the end to avoid character rollover
+            | char == (head (snd p)) = output++[(fst p, (count+1)), ('1', 1)]
+            --otherwise increment press count by 1 and check the remaining characters of the digit
+            | otherwise = go (((fst p), tail (snd p)):ps) char output (count+1)
 
 cellPhonesDead :: DaPhone -> String -> [(Digit, Presses)]
-cellPhonesDead = undefined -}
+cellPhonesDead (DaPhone phoneList) s = go (DaPhone phoneList) s []
+    where
+        go phoneList "" output = output
+        go phoneList s output = go phoneList (tail s) (output++(reverseTaps phoneList (head s)))
+
+fingerTaps :: [(Digit, Presses)] -> Presses
+fingerTaps input = go input 0
+    where
+        go [] count = count
+        go (i:is) count = go is (count + (snd i))
+
+mostPopularLetter :: String -> Char
+mostPopularLetter s = go s [] []
+    where
+        go "" lochar locount = (lochar!!ind)
+            where
+                Just ind = findIndex (==(maximum locount)) locount
+        go (c:cs) lochar locount
+            | c == ' ' = go cs lochar locount
+            | notElem c lochar = go cs (c:lochar) (1:locount)
+            | otherwise = go cs lochar ((take ind locount)++[(locount!!ind)+1]++(drop (ind+1) locount))
+                where
+                    Just ind = findIndex (==c) lochar
+
+coolestLtr :: [String] -> Char
+coolestLtr los = mostPopularLetter (concat los)
+
+coolestWord :: [String] -> String
+coolestWord los = go ilow [] []
+    where
+        go [] lowc locount = (lowc!!ind)
+            where
+                Just ind = findIndex (==(maximum locount)) locount
+        go (w:ws) lowc locount
+            | notElem w lowc = go ws (w:lowc) (1:locount)
+            | otherwise = go ws lowc ((take ind locount)++[(locount!!ind)+1]++(drop (ind+1) locount))
+                where
+                    Just ind = findIndex (==w) lowc
+        ilow = concat (map words los)
+
+data Expr
+    = Lit Integer
+    | Add Expr Expr
+
+eval :: Expr -> Integer
+eval (Lit x) = x
+eval (Add e1 e2) = (eval e1) + (eval e2)
+
+printExpr :: Expr -> String
+printExpr (Lit x) = show x
+printExpr (Add e1 e2) = (printExpr e1)++" + "++(printExpr e2)
