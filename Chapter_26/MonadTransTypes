@@ -1,0 +1,10 @@
+v :: Monad m => m a
+liftM Just :: Monad m => m a -> m (Maybe a)
+liftM Just v :: m (Maybe a)
+MaybeT (liftM Just v) :: MaybeT m a
+
+v :: Monad => m a
+const :: a -> b -> a
+ReaderT :: (r -> m a) -> ReaderT r m a
+const v :: b -> m a
+ReaderT (const v) :: ReaderT b m a
