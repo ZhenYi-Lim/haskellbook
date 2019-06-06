@@ -4,3 +4,8 @@ Chapter_14/wordnumber/.stack-work/
 Chapter_14/morse/.stack-work/
 Chapter_14/addition/.stack-work/
 Chapter_14/.stack-work/
+*.exe
+*.o
+*.hi
+*.prof
+*.hp
