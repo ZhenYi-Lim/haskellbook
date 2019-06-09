@@ -1,0 +1,9 @@
+In powershell, use finger without '@'.
+	finger localhost
+	finger callen@localhost
+https://www.rootusers.com/how-to-enable-the-telnet-client-in-windows-10/ (problem: echoes back immediately.)
+Use PuTTY in telnet mode.
+	Terminal -> Line discipline options -> Local echo -> Force on (shows what you type)
+	Terminal -> Line discipline options -> Local line editing -> Force on
+		(sends only after pressing enter. Appears to omit the /r/n characters.)
+	Connection -> Telnet negotiation mode -> Passive (so that PuTTY doesn't send extra data)
